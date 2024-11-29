@@ -52,7 +52,17 @@ let items = [];
 const THINGS = [LOOT, EMPTY, PORTAL];
 
 let eventText = "";
+let textDuration = 4;
+let textTimer = textDuration;
 let teleported = false;
+let doorDisable = true;
+let startingPoint = {
+    row: null,
+    col: null,
+};
+let backtracking = {};
+let lootedItems = [];
+let newLevel = false;
 
 const HP_MAX = 10;
 
@@ -66,17 +76,36 @@ class Labyrinth {
     update() {
 
         if (playerPos.row == null) {
+            newLevel = false;
             for (let row = 0; row < level.length; row++) {
                 for (let col = 0; col < level[row].length; col++) {
                     if (level[row][col] == HERO) {
                         playerPos.row = row;
                         playerPos.col = col;
+                        if (levelNr > 1){
+                            startingPoint.row = row;
+                            startingPoint.col = col;
+                        }
                         break;
                     }
                 }
                 if (playerPos.row != undefined) {
                     break;
                 }
+            }
+        } else if (playerPos != null && newLevel == true) {
+            for (let row = 0; row < level.length; row++) {
+                for (let col = 0; col < level[row].length; col++){
+                    if (level[row][col] == HERO && (row != playerPos.row || col != playerPos.col)){
+                        level[row][col] = EMPTY;
+                        isDirty = true;
+                    }
+                    if (lootedItems[levelNr-1].includes(level[row][col])){
+                        level[row][col] = EMPTY;
+                        isDirty = true;
+                    }
+                }
+            
             }
         }
 
@@ -85,14 +114,22 @@ class Labyrinth {
 
         if (KeyBoardManager.isUpPressed()) {
             drow = -1;
+            doorDisable = false;
+            isDirty = true;
         } else if (KeyBoardManager.isDownPressed()) {
             drow = 1;
+            doorDisable = false;
+            isDirty = true;
         }
 
         if (KeyBoardManager.isLeftPressed()) {
             dcol = -1;
+            doorDisable = false;
+            isDirty = true;
         } else if (KeyBoardManager.isRightPressed()) {
             dcol = 1;
+            doorDisable = false;
+            isDirty = true;
         }
 
         let tRow = playerPos.row + (1 * drow);
@@ -104,20 +141,14 @@ class Labyrinth {
             if (currentItem == LOOT) {
                 let loot = Math.round(Math.random() * 7) + 3;
                 playerStats.cash += loot;
-                eventText = `Player gained $${loot}`;
-
-                // Move the HERO
-                if (teleported == true){
-                    level[playerPos.row][playerPos.col] = PORTAL;
-                    teleported = false;
-                } else {
-                    level[playerPos.row][playerPos.col] = EMPTY;
+                for(let i = 0; i < levelNr; i++){
+                    if (lootedItems[levelNr-1] == undefined){
+                        lootedItems.push([]);
+                    }
                 }
-                level[tRow][tCol] = HERO;
-
-                // Update the HERO
-                playerPos.row = tRow;
-                playerPos.col = tCol; 
+                lootedItems[levelNr-1].push(currentItem);
+                eventText = `Player gained $${loot}`;
+                moveHero(tRow, tCol); 
             } else if (currentItem == PORTAL){
                 let portal = [tRow, tCol];
                 level[portal[0]][portal[1]] = EMPTY;
@@ -136,31 +167,31 @@ class Labyrinth {
                 level[playerPos.row][playerPos.col] = HERO;
                 teleported = true;
             } else {
-                // Move the HERO
-                if (teleported == true){
-                    level[playerPos.row][playerPos.col] = PORTAL;
-                    teleported = false;
-                } else {
-                    level[playerPos.row][playerPos.col] = EMPTY;
-                }
-                level[tRow][tCol] = HERO;
-
-                // Update the HERO
-                playerPos.row = tRow;
-                playerPos.col = tCol; 
+                moveHero(tRow, tCol);
             }
 
             // Make the draw function draw.
-            isDirty = true;
         } else {
             direction *= -1;
         }
-
-        if (playerPos.row == 0 || playerPos. row == level.length - 1 || playerPos.col == 0 || playerPos.col == level[playerPos.row].length -1){
+        if (doorDisable == false && playerPos.row == startingPoint.row && playerPos.col == startingPoint.col){
+            levelNr -= 1;
+            levelData = readMapFile(levels[levelNr]);
+            level = levelData;
+            playerPos.row = backtracking["map" + levelNr + "Row"];
+            playerPos.col = backtracking["map" + levelNr + "Col"];
+            doorDisable = true;
+            newLevel = true;
+        }
+        if (doorDisable == false && (playerPos.row == 0 || playerPos. row == level.length - 1 || playerPos.col == 0 || playerPos.col == level[playerPos.row].length -1)){
+            backtracking["map" + levelNr + "Row"] = playerPos.row;
+            backtracking["map" + levelNr + "Col"] = playerPos.col;
             levelNr += 1;
             levelData = readMapFile(levels[levelNr]);
             level = levelData;
             playerPos.row = null;
+            doorDisable = true;
+            newLevel = true;
         }
     }
 
@@ -194,7 +225,12 @@ class Labyrinth {
         console.log(rendering);
         if (eventText != "") {
             console.log(eventText);
-            eventText = "";
+            textTimer -= 1;
+            if(textTimer < 1){
+                eventText = "";
+                textTimer = textDuration;
+            }
+            
         }
     }
 }
@@ -211,6 +247,19 @@ function pad(len, text) {
         output += text;
     }
     return output;
+}
+
+function moveHero(tRow, tCol){
+    if (teleported == true){
+        level[playerPos.row][playerPos.col] = PORTAL;
+        teleported = false;
+    } else {
+        level[playerPos.row][playerPos.col] = EMPTY;
+    }
+    level[tRow][tCol] = HERO;
+
+    playerPos.row = tRow;
+    playerPos.col = tCol;
 }
 
 
