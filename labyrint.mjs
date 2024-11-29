@@ -43,14 +43,16 @@ let playerPos = {
 const EMPTY = " ";
 const HERO = "H";
 const LOOT = "$";
+const PORTAL = "O";
 
 let direction = -1;
 
 let items = [];
 
-const THINGS = [LOOT, EMPTY];
+const THINGS = [LOOT, EMPTY, PORTAL];
 
 let eventText = "";
+let teleported = false;
 
 const HP_MAX = 10;
 
@@ -66,7 +68,7 @@ class Labyrinth {
         if (playerPos.row == null) {
             for (let row = 0; row < level.length; row++) {
                 for (let col = 0; col < level[row].length; col++) {
-                    if (level[row][col] == "H") {
+                    if (level[row][col] == HERO) {
                         playerPos.row = row;
                         playerPos.col = col;
                         break;
@@ -103,15 +105,50 @@ class Labyrinth {
                 let loot = Math.round(Math.random() * 7) + 3;
                 playerStats.cash += loot;
                 eventText = `Player gained $${loot}`;
+
+                // Move the HERO
+                if (teleported == true){
+                    level[playerPos.row][playerPos.col] = PORTAL;
+                    teleported = false;
+                } else {
+                    level[playerPos.row][playerPos.col] = EMPTY;
+                }
+                level[tRow][tCol] = HERO;
+
+                // Update the HERO
+                playerPos.row = tRow;
+                playerPos.col = tCol; 
+            } else if (currentItem == PORTAL){
+                let portal = [tRow, tCol];
+                level[portal[0]][portal[1]] = EMPTY;
+                level[playerPos.row][playerPos.col] = EMPTY;
+ 
+                for (let row = 0; row < level.length; row++) {
+                    for (let col = 0; col < level[row].length; col++) {
+                        if (level[row][col] == PORTAL) {
+                            playerPos.row = row;
+                            playerPos.col = col;
+                            break;
+                        }
+                    }
+                }
+                level[portal[0]][portal[1]] = PORTAL;
+                level[playerPos.row][playerPos.col] = HERO;
+                teleported = true;
+            } else {
+                // Move the HERO
+                if (teleported == true){
+                    level[playerPos.row][playerPos.col] = PORTAL;
+                    teleported = false;
+                } else {
+                    level[playerPos.row][playerPos.col] = EMPTY;
+                }
+                level[tRow][tCol] = HERO;
+
+                // Update the HERO
+                playerPos.row = tRow;
+                playerPos.col = tCol; 
             }
-
-            // Move the HERO
-            level[playerPos.row][playerPos.col] = EMPTY;
-            level[tRow][tCol] = HERO;
-
-            // Update the HERO
-            playerPos.row = tRow;
-            playerPos.col = tCol;
 
             // Make the draw function draw.
             isDirty = true;
