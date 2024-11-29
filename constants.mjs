@@ -6,7 +6,7 @@ const DATA_DIR = "./data/";
 
 
 // Game spesific constants.
-const START_LEVEL_ID = "start"
+const START_LEVEL_ID = "1";
 
 
 // Scalar constants 

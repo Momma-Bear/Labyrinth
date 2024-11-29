@@ -1,2 +1,2 @@
-start:map1.txt
-aSharpPlace:sharp.txt
+1:map1.txt
+2:sharp.txt
