@@ -47,10 +47,11 @@ const PORTAL = "O";
 const ENEMY_HORIZONTAL = "X";
 const ENEMY_VERTICAL = "Z";
 const HP_POTION = "A";
+const POISON = "Å";
 
 let items = [];
 
-const THINGS = [LOOT, EMPTY, PORTAL, HP_POTION];
+const THINGS = [LOOT, EMPTY, PORTAL, HP_POTION, POISON];
 
 let eventText = [];
 let textDuration = 8;
@@ -71,6 +72,8 @@ let enemyPatrol = 2;
 let npcDirection = 1;
 let patrolTimer = 0;
 let patrolDuration = 8;
+let potionCost = 15;
+let potionHeal = 4;
 
 const HP_MAX = 10;
 
@@ -135,7 +138,7 @@ class Labyrinth {
         if (doorDisable == false && playerPos.row == startingPoint.row && playerPos.col == startingPoint.col){
             levelChange("backtracking");
         }
-        if (doorDisable == false && (playerPos.row == 0 || playerPos. row == level.length - 1 || playerPos.col == 0 || playerPos.col == level[playerPos.row].length -1)){
+        if (doorDisable == false && (playerPos.row == 0 || playerPos.row == level.length - 1 || playerPos.col == 0 || playerPos.col == level[playerPos.row].length - 1)){
             levelChange("forward");
         }
     }
@@ -203,9 +206,12 @@ function checkForObject(Item, Row, Col){
         level[playerPos.row][playerPos.col] = HERO;
         teleported = true;
     } else if (Item == HP_POTION){
-        if (playerStats.cash > 14){
-            playerStats.cash -= 15;
-            playerStats.hp += 4;
+        if (playerStats.cash >= potionCost){
+            playerStats.cash -= potionCost;
+            playerStats.hp += potionHeal;
+            if (playerStats.hp > HP_MAX){
+                playerStats.hp = HP_MAX;
+            }
 
             for(let i = 0; i < levelNr; i++){
                 if (lootedItems[levelNr-1] == undefined){
@@ -219,6 +225,18 @@ function checkForObject(Item, Row, Col){
             moveHero(Row, Col);
             potion = true;
         }
+    } else if (Item == POISON) {
+        let damage = Math.round(Math.random() * 10);
+        playerStats.hp -= damage;
+
+        for(let i = 0; i < levelNr; i++){
+            if (lootedItems[levelNr-1] == undefined){
+                lootedItems[levelNr-1] = [];
+            }
+        }
+        lootedItems[levelNr-1].push([Row, Col]);
+        eventText.push([`Player lost ${damage} hp`]);
+        moveHero(Row, Col);
     } else {
         moveHero(Row, Col);
     }

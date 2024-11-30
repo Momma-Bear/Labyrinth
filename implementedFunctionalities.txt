@@ -11,3 +11,4 @@
 - Optional Features:
     - Made event messages last longer
     - Stocked store with HP potions
+    - Added poisons & potions
