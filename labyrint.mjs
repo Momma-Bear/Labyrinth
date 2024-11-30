@@ -2,7 +2,6 @@ import ANSI from "./utils/ANSI.mjs";
 import KeyBoardManager from "./utils/KeyBoardManager.mjs";
 import { readMapFile, readRecordFile } from "./utils/fileHelpers.mjs";
 import * as CONST from "./constants.mjs";
-import oscillate from "./utils/oscilate.mjs";
 
 
 const startingLevel = CONST.START_LEVEL_ID;
@@ -47,15 +46,17 @@ const LOOT = "$";
 const PORTAL = "O";
 const ENEMY_HORIZONTAL = "X";
 const ENEMY_VERTICAL = "Z";
+const HP_POTION = "A";
 
 let items = [];
 
-const THINGS = [LOOT, EMPTY, PORTAL];
+const THINGS = [LOOT, EMPTY, PORTAL, HP_POTION];
 
 let eventText = [];
 let textDuration = 8;
 let textTimer = textDuration;
 let teleported = false;
+let potion = false;
 let doorDisable = true;
 let startingPoint = {
     row: null,
@@ -201,6 +202,23 @@ function checkForObject(Item, Row, Col){
         level[portal[0]][portal[1]] = PORTAL;
         level[playerPos.row][playerPos.col] = HERO;
         teleported = true;
+    } else if (Item == HP_POTION){
+        if (playerStats.cash > 14){
+            playerStats.cash -= 15;
+            playerStats.hp += 4;
+
+            for(let i = 0; i < levelNr; i++){
+                if (lootedItems[levelNr-1] == undefined){
+                    lootedItems[levelNr-1] = [];
+                }
+            }
+            lootedItems[levelNr-1].push([Row, Col]);
+            eventText.push([`Player gained 4 hp`]);
+            moveHero(Row, Col);
+        } else {
+            moveHero(Row, Col);
+            potion = true;
+        }
     } else {
         moveHero(Row, Col);
     }
@@ -210,6 +228,9 @@ function moveHero(tRow, tCol){
     if (teleported == true){
         level[playerPos.row][playerPos.col] = PORTAL;
         teleported = false;
+    } else if (potion == true){
+        level[playerPos.row][playerPos.col] = HP_POTION;
+        potion = false;
     } else {
         level[playerPos.row][playerPos.col] = EMPTY;
     }
