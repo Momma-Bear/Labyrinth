@@ -48,14 +48,12 @@ const PORTAL = "O";
 const ENEMY_HORIZONTAL = "X";
 const ENEMY_VERTICAL = "Z";
 
-let direction = -1;
-
 let items = [];
 
 const THINGS = [LOOT, EMPTY, PORTAL];
 
-let eventText = "";
-let textDuration = 4;
+let eventText = [];
+let textDuration = 8;
 let textTimer = textDuration;
 let teleported = false;
 let doorDisable = true;
@@ -64,7 +62,7 @@ let startingPoint = {
     col: null,
 };
 let backtracking = {};
-let lootedItems = [[]];
+let lootedItems = [];
 let newLevel = false;
 let enemyPositionsH = [];
 let enemyPositionsV = [];
@@ -86,37 +84,9 @@ class Labyrinth {
 
         if (playerPos.row == null) {
             newLevel = false;
-            for (let row = 0; row < level.length; row++) {
-                for (let col = 0; col < level[row].length; col++) {
-                    if (level[row][col] == HERO) {
-                        playerPos.row = row;
-                        playerPos.col = col;
-                        if (levelNr > 1){
-                            startingPoint.row = row;
-                            startingPoint.col = col;
-                        }
-                        break;
-                    }
-                }
-                if (playerPos.row != undefined) {
-                    break;
-                }
-            }
+            locateHero();
         } else if (playerPos != null && newLevel == true) {
-            for (let row = 0; row < level.length; row++) {
-                for (let col = 0; col < level[row].length; col++){
-                    if (level[row][col] == HERO && (row != playerPos.row || col != playerPos.col)){
-                        level[row][col] = EMPTY;
-                        isDirty = true;
-                    }
-                    for (let i = 0; i < lootedItems[levelNr-1].length; i++){
-                        if (lootedItems[levelNr-1][i][0] == row && lootedItems[levelNr-1][i][1] == col){
-                            level[row][col] = EMPTY;
-                        }
-                    }
-                }
-            
-            }
+            removeObjects();
         }
 
         let drow = 0;
@@ -141,44 +111,11 @@ class Labyrinth {
         let tRow = playerPos.row + (1 * drow);
         let tCol = playerPos.col + (1 * dcol);
 
-        if (THINGS.includes(level[tRow][tCol])) { // Is there anything where Hero is moving to
+        if (THINGS.includes(level[tRow][tCol])) {
 
             let currentItem = level[tRow][tCol];
-            if (currentItem == LOOT) {
-                let loot = Math.round(Math.random() * 7) + 3;
-                playerStats.cash += loot;
-                for(let i = 0; i < levelNr; i++){
-                    if (lootedItems[levelNr-1] == undefined){
-                        lootedItems[levelNr-1] = [];
-                    }
-                }
-                lootedItems[levelNr-1].push([tRow, tCol]);
-                eventText = `Player gained $${loot}`;
-                moveHero(tRow, tCol); 
-            } else if (currentItem == PORTAL){
-                let portal = [tRow, tCol];
-                level[portal[0]][portal[1]] = EMPTY;
-                level[playerPos.row][playerPos.col] = EMPTY;
- 
-                for (let row = 0; row < level.length; row++) {
-                    for (let col = 0; col < level[row].length; col++) {
-                        if (level[row][col] == PORTAL) {
-                            playerPos.row = row;
-                            playerPos.col = col;
-                            break;
-                        }
-                    }
-                }
-                level[portal[0]][portal[1]] = PORTAL;
-                level[playerPos.row][playerPos.col] = HERO;
-                teleported = true;
-            } else {
-                moveHero(tRow, tCol);
-            }
+            checkForObject(currentItem, tRow, tCol);
 
-            // Make the draw function draw.
-        } else {
-            direction *= -1;
         }
 
         identifyEnemies(ENEMY_HORIZONTAL, enemyPositionsH);
@@ -188,43 +125,8 @@ class Labyrinth {
         if (patrolTimer >= patrolDuration){
             patrolTimer = 0;
             enemyPatrol += 1;
-            for (let i = 0; i < enemyPositionsH.length; i++){
-                let tNpcRow = enemyPositionsH[i][0];
-                let tNpcCol = enemyPositionsH[i][1] + (1 * npcDirection);
-                
-
-                if (enemyPatrol >= 4){
-                    npcDirection *= -1;
-                    enemyPatrol = 0;
-                }
-
-                if (level[tNpcRow][tNpcCol] == EMPTY){
-                level[enemyPositionsH[i][0]][enemyPositionsH[i][1]] = EMPTY;
-                level[tNpcRow][tNpcCol] = ENEMY_HORIZONTAL;
-
-                enemyPositionsH[i][1] = tNpcCol;
-                isDirty = true;
-                }
-            }
-            
-            for (let i = 0; i < enemyPositionsV.length; i++){
-                let tNpcRow = enemyPositionsV[i][0] + (1 * npcDirection);
-                let tNpcCol = enemyPositionsV[i][1];
-                
-
-                if (enemyPatrol >= 4){
-                    npcDirection *= -1;
-                    enemyPatrol = 0;
-                }
-
-                if (level[tNpcRow][tNpcCol] == EMPTY){
-                level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
-                level[tNpcRow][tNpcCol] = ENEMY_VERTICAL;
-
-                enemyPositionsV[i][1] = tNpcCol;
-                isDirty = true;
-                }
-            }
+            moveEnemies(enemyPositionsH, "horizontal");
+            moveEnemies(enemyPositionsV, "vertical")
         }
         
         
@@ -250,31 +152,9 @@ class Labyrinth {
 
         rendering += renderHud();
 
-        for (let row = 0; row < level.length; row++) {
-            let rowRendering = "";
-            for (let col = 0; col < level[row].length; col++) {
-                let symbol = level[row][col];
-                if (pallet[symbol] != undefined) {
-                    rowRendering += pallet[symbol] + symbol + ANSI.COLOR_RESET;
-                } else {
-                    rowRendering += symbol;
-                }
-            }
-            rowRendering += "\n";
-            rendering += rowRendering;
-        }
+        rendering += renderMap();
 
-        console.log(rendering);
-        if (eventText != "") {
-            console.log(eventText);
-            textTimer -= 1;
-            if(textTimer < 1){
-                eventText = "";
-                textTimer = textDuration;
-            }
-            
-        }
-        console.log(ANSI.HIDE_CURSOR);
+        printEverything(rendering);
     }
 }
 
@@ -290,6 +170,40 @@ function pad(len, text) {
         output += text;
     }
     return output;
+}
+
+function checkForObject(Item, Row, Col){
+    if (Item == LOOT) {
+        let loot = Math.round(Math.random() * 7) + 3;
+        playerStats.cash += loot;
+        for(let i = 0; i < levelNr; i++){
+            if (lootedItems[levelNr-1] == undefined){
+                lootedItems[levelNr-1] = [];
+            }
+        }
+        lootedItems[levelNr-1].push([Row, Col]);
+        eventText.push([`Player gained $${loot}`]);
+        moveHero(Row, Col); 
+    } else if (Item == PORTAL){
+        let portal = [Row, Col];
+        level[portal[0]][portal[1]] = EMPTY;
+        level[playerPos.row][playerPos.col] = EMPTY;
+
+        for (let row = 0; row < level.length; row++) {
+            for (let col = 0; col < level[row].length; col++) {
+                if (level[row][col] == PORTAL) {
+                    playerPos.row = row;
+                    playerPos.col = col;
+                    break;
+                }
+            }
+        }
+        level[portal[0]][portal[1]] = PORTAL;
+        level[playerPos.row][playerPos.col] = HERO;
+        teleported = true;
+    } else {
+        moveHero(Row, Col);
+    }
 }
 
 function moveHero(tRow, tCol){
@@ -318,7 +232,6 @@ function identifyEnemies(enemy, list){
 }
 
 function levelChange(progression){
-    //backtracking
     if (progression == "backtracking"){
         levelNr -= 1;
         playerPos.row = backtracking["map" + levelNr + "Row"];
@@ -341,6 +254,120 @@ function levelChange(progression){
 function disableDoor(){
     doorDisable = false;
     isDirty = true;
+}
+
+function moveEnemies(list, direction){
+    if (direction == "horizontal"){
+        for (let i = 0; i < list.length; i++){
+            let tNpcRow = list[i][0];
+            let tNpcCol = list[i][1] + (1 * npcDirection);
+            
+
+            if (enemyPatrol >= 4){
+                npcDirection *= -1;
+                enemyPatrol = 0;
+            }
+
+            if (level[tNpcRow][tNpcCol] == EMPTY){
+            level[list[i][0]][list[i][1]] = EMPTY;
+            level[tNpcRow][tNpcCol] = ENEMY_HORIZONTAL;
+
+            list[i][1] = tNpcCol;
+            isDirty = true;
+            }
+        }
+    } else if (direction == "vertical"){
+        for (let i = 0; i < list.length; i++){
+            let tNpcRow = list[i][0] + (1 * npcDirection);
+            let tNpcCol = list[i][1];
+            
+
+            if (enemyPatrol >= 4){
+                npcDirection *= -1;
+                enemyPatrol = 0;
+            }
+
+            if (level[tNpcRow][tNpcCol] == EMPTY){
+            level[list[i][0]][list[i][1]] = EMPTY;
+            level[tNpcRow][tNpcCol] = ENEMY_VERTICAL;
+
+            list[i][1] = tNpcCol;
+            isDirty = true;
+            }
+        }
+    }
+}
+
+function renderMap(){
+    let rendering = "";
+    for (let row = 0; row < level.length; row++) {
+        let rowRendering = "";
+        for (let col = 0; col < level[row].length; col++) {
+            let symbol = level[row][col];
+            if (pallet[symbol] != undefined) {
+                rowRendering += pallet[symbol] + symbol + ANSI.COLOR_RESET;
+            } else {
+                rowRendering += symbol;
+            }
+        }
+        rowRendering += "\n";
+        rendering += rowRendering;
+    }
+    return rendering;
+}
+
+function printEverything(rendering){
+    console.log(rendering);
+
+    if (eventText[0] != undefined) {
+        for (let i = 0; i < eventText.length; i++){
+        console.log(eventText[i]);
+    }
+        textTimer -= 1;
+        if(textTimer < 1){
+            eventText.shift();
+            textTimer = textDuration;
+        }
+        
+    }
+
+    console.log(ANSI.HIDE_CURSOR);
+}
+
+function locateHero(){
+    for (let row = 0; row < level.length; row++) {
+        for (let col = 0; col < level[row].length; col++) {
+            if (level[row][col] == HERO) {
+                playerPos.row = row;
+                playerPos.col = col;
+                if (levelNr > 1){
+                    startingPoint.row = row;
+                    startingPoint.col = col;
+                }
+                break;
+            }
+        }
+        if (playerPos.row != undefined) {
+            break;
+        }
+    }
+}
+
+function removeObjects(){
+    for (let row = 0; row < level.length; row++) {
+        for (let col = 0; col < level[row].length; col++){
+            if (level[row][col] == HERO && (row != playerPos.row || col != playerPos.col)){
+                level[row][col] = EMPTY;
+                isDirty = true;
+            }
+            for (let i = 0; i < lootedItems[levelNr-1].length; i++){
+                if (lootedItems[levelNr-1][i][0] == row && lootedItems[levelNr-1][i][1] == col){
+                    level[row][col] = EMPTY;
+                }
+            }
+        }
+    
+    }
 }
 
 export default Labyrinth;
