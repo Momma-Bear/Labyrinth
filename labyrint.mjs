@@ -64,7 +64,7 @@ let startingPoint = {
     col: null,
 };
 let backtracking = {};
-let lootedItems = [];
+let lootedItems = [[]];
 let newLevel = false;
 let enemyPositionsH = [];
 let enemyPositionsV = [];
@@ -109,9 +109,10 @@ class Labyrinth {
                         level[row][col] = EMPTY;
                         isDirty = true;
                     }
-                    if (lootedItems[levelNr-1].includes(level[row][col])){
-                        level[row][col] = EMPTY;
-                        isDirty = true;
+                    for (let i = 0; i < lootedItems[levelNr-1].length; i++){
+                        if (lootedItems[levelNr-1][i][0] == row && lootedItems[levelNr-1][i][1] == col){
+                            level[row][col] = EMPTY;
+                        }
                     }
                 }
             
@@ -123,22 +124,18 @@ class Labyrinth {
 
         if (KeyBoardManager.isUpPressed()) {
             drow = -1;
-            doorDisable = false;
-            isDirty = true;
+            disableDoor();
         } else if (KeyBoardManager.isDownPressed()) {
             drow = 1;
-            doorDisable = false;
-            isDirty = true;
+            disableDoor();
         }
 
         if (KeyBoardManager.isLeftPressed()) {
             dcol = -1;
-            doorDisable = false;
-            isDirty = true;
+            disableDoor();
         } else if (KeyBoardManager.isRightPressed()) {
             dcol = 1;
-            doorDisable = false;
-            isDirty = true;
+            disableDoor();
         }
 
         let tRow = playerPos.row + (1 * drow);
@@ -152,10 +149,10 @@ class Labyrinth {
                 playerStats.cash += loot;
                 for(let i = 0; i < levelNr; i++){
                     if (lootedItems[levelNr-1] == undefined){
-                        lootedItems.push([]);
+                        lootedItems[levelNr-1] = [];
                     }
                 }
-                lootedItems[levelNr-1].push(currentItem);
+                lootedItems[levelNr-1].push([tRow, tCol]);
                 eventText = `Player gained $${loot}`;
                 moveHero(tRow, tCol); 
             } else if (currentItem == PORTAL){
@@ -207,15 +204,7 @@ class Labyrinth {
 
                 enemyPositionsH[i][1] = tNpcCol;
                 isDirty = true;
-                }/*else {
-                    if (level[tNpcRow][tNpcCol - (2 * npcDirection)] == EMPTY){
-                        level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
-                        level[tNpcRow][tNpcCol - (2 * npcDirection)] = ENEMY_VERTICAL;
-
-                        enemyPositionsV[i][1] = tNpcCol - (2 * npcDirection);
-                        isDirty = true;
-                    }
-                }*/
+                }
             }
             
             for (let i = 0; i < enemyPositionsV.length; i++){
@@ -234,44 +223,17 @@ class Labyrinth {
 
                 enemyPositionsV[i][1] = tNpcCol;
                 isDirty = true;
-                } /*else {
-                    if (level[tNpcRow - (2 * npcDirection)][tNpcCol] == EMPTY){
-                        level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
-                        level[tNpcRow - (2 * npcDirection)][tNpcCol] = ENEMY_VERTICAL;
-
-                        enemyPositionsV[i][1] = tNpcCol - (2 * npcDirection);
-                        isDirty = true;
-                    }
-                }*/
+                }
             }
         }
         
         
 
         if (doorDisable == false && playerPos.row == startingPoint.row && playerPos.col == startingPoint.col){
-            levelNr -= 1;
-            levelData = readMapFile(levels[levelNr]);
-            level = levelData;
-            playerPos.row = backtracking["map" + levelNr + "Row"];
-            playerPos.col = backtracking["map" + levelNr + "Col"];
-            doorDisable = true;
-            newLevel = true;
-            enemyPositionsH = [];
-            enemyPositionsV = [];
-            enemyPatrol = 2;
+            levelChange("backtracking");
         }
         if (doorDisable == false && (playerPos.row == 0 || playerPos. row == level.length - 1 || playerPos.col == 0 || playerPos.col == level[playerPos.row].length -1)){
-            backtracking["map" + levelNr + "Row"] = playerPos.row;
-            backtracking["map" + levelNr + "Col"] = playerPos.col;
-            levelNr += 1;
-            levelData = readMapFile(levels[levelNr]);
-            level = levelData;
-            playerPos.row = null;
-            doorDisable = true;
-            newLevel = true;
-            enemyPositionsH = [];
-            enemyPositionsV = [];
-            enemyPatrol = 2;
+            levelChange("forward");
         }
     }
 
@@ -355,5 +317,30 @@ function identifyEnemies(enemy, list){
     }
 }
 
+function levelChange(progression){
+    //backtracking
+    if (progression == "backtracking"){
+        levelNr -= 1;
+        playerPos.row = backtracking["map" + levelNr + "Row"];
+        playerPos.col = backtracking["map" + levelNr + "Col"];
+    } else if (progression == "forward"){
+        backtracking["map" + levelNr + "Row"] = playerPos.row;
+        backtracking["map" + levelNr + "Col"] = playerPos.col;
+        levelNr += 1;
+        playerPos.row = null;
+    }
+    levelData = readMapFile(levels[levelNr]);
+    level = levelData;
+    doorDisable = true;
+    newLevel = true;
+    enemyPositionsH = [];
+    enemyPositionsV = [];
+    enemyPatrol = 2;
+}
+
+function disableDoor(){
+    doorDisable = false;
+    isDirty = true;
+}
 
 export default Labyrinth;
