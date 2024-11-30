@@ -1,0 +1,13 @@
+- Main (compulsory) features:
+    - Added door to next level
+    - Created 3rd level
+    - Created teleport function
+        - Couldn't make it work with the existing "♨︎" symbols
+        - Changed symbols to "O"
+    - Created backtracking option
+    - Made X NPCs patrol horizontally
+    - Created animated splash screen
+
+- Optional Features:
+    - Made event messages last longer
+    - 
