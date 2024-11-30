@@ -69,8 +69,9 @@ let newLevel = false;
 let enemyPositionsH = [];
 let enemyPositionsV = [];
 let enemyPatrol = 2;
-//let enemyPatrolV = 2;
 let npcDirection = 1;
+let patrolTimer = 0;
+let patrolDuration = 8;
 
 const HP_MAX = 10;
 
@@ -186,59 +187,63 @@ class Labyrinth {
         identifyEnemies(ENEMY_HORIZONTAL, enemyPositionsH);
         identifyEnemies(ENEMY_VERTICAL, enemyPositionsV);
 
-        enemyPatrol += 1;
-        for (let i = 0; i < enemyPositionsH.length; i++){
-            let tNpcRow = enemyPositionsH[i][0];
-            let tNpcCol = enemyPositionsH[i][1] + (1 * npcDirection);
-            
+        patrolTimer += 1;
+        if (patrolTimer >= patrolDuration){
+            patrolTimer = 0;
+            enemyPatrol += 1;
+            for (let i = 0; i < enemyPositionsH.length; i++){
+                let tNpcRow = enemyPositionsH[i][0];
+                let tNpcCol = enemyPositionsH[i][1] + (1 * npcDirection);
+                
 
-            if (enemyPatrol >= 4){
-                npcDirection *= -1;
-                enemyPatrol = 0;
-            }
-
-            if (level[tNpcRow][tNpcCol] == EMPTY){
-            level[enemyPositionsH[i][0]][enemyPositionsH[i][1]] = EMPTY;
-            level[tNpcRow][tNpcCol] = ENEMY_HORIZONTAL;
-
-            enemyPositionsH[i][1] = tNpcCol;
-            isDirty = true;
-            }/*else {
-                if (level[tNpcRow][tNpcCol - (2 * npcDirection)] == EMPTY){
-                    level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
-                    level[tNpcRow][tNpcCol - (2 * npcDirection)] = ENEMY_VERTICAL;
-
-                    enemyPositionsV[i][1] = tNpcCol - (2 * npcDirection);
-                    isDirty = true;
+                if (enemyPatrol >= 4){
+                    npcDirection *= -1;
+                    enemyPatrol = 0;
                 }
-            }*/
-        }
-        
-        for (let i = 0; i < enemyPositionsV.length; i++){
-            let tNpcRow = enemyPositionsV[i][0] + (1 * npcDirection);
-            let tNpcCol = enemyPositionsV[i][1];
-            
 
-            if (enemyPatrol >= 4){
-                npcDirection *= -1;
-                enemyPatrol = 0;
+                if (level[tNpcRow][tNpcCol] == EMPTY){
+                level[enemyPositionsH[i][0]][enemyPositionsH[i][1]] = EMPTY;
+                level[tNpcRow][tNpcCol] = ENEMY_HORIZONTAL;
+
+                enemyPositionsH[i][1] = tNpcCol;
+                isDirty = true;
+                }/*else {
+                    if (level[tNpcRow][tNpcCol - (2 * npcDirection)] == EMPTY){
+                        level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
+                        level[tNpcRow][tNpcCol - (2 * npcDirection)] = ENEMY_VERTICAL;
+
+                        enemyPositionsV[i][1] = tNpcCol - (2 * npcDirection);
+                        isDirty = true;
+                    }
+                }*/
             }
+            
+            for (let i = 0; i < enemyPositionsV.length; i++){
+                let tNpcRow = enemyPositionsV[i][0] + (1 * npcDirection);
+                let tNpcCol = enemyPositionsV[i][1];
+                
 
-            if (level[tNpcRow][tNpcCol] == EMPTY){
-            level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
-            level[tNpcRow][tNpcCol] = ENEMY_VERTICAL;
-
-            enemyPositionsV[i][1] = tNpcCol;
-            isDirty = true;
-            } /*else {
-                if (level[tNpcRow - (2 * npcDirection)][tNpcCol] == EMPTY){
-                    level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
-                    level[tNpcRow - (2 * npcDirection)][tNpcCol] = ENEMY_VERTICAL;
-
-                    enemyPositionsV[i][1] = tNpcCol - (2 * npcDirection);
-                    isDirty = true;
+                if (enemyPatrol >= 4){
+                    npcDirection *= -1;
+                    enemyPatrol = 0;
                 }
-            }*/
+
+                if (level[tNpcRow][tNpcCol] == EMPTY){
+                level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
+                level[tNpcRow][tNpcCol] = ENEMY_VERTICAL;
+
+                enemyPositionsV[i][1] = tNpcCol;
+                isDirty = true;
+                } /*else {
+                    if (level[tNpcRow - (2 * npcDirection)][tNpcCol] == EMPTY){
+                        level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
+                        level[tNpcRow - (2 * npcDirection)][tNpcCol] = ENEMY_VERTICAL;
+
+                        enemyPositionsV[i][1] = tNpcCol - (2 * npcDirection);
+                        isDirty = true;
+                    }
+                }*/
+            }
         }
         
         

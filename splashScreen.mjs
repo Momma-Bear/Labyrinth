@@ -26,7 +26,7 @@ for (let i = 0; i < tempGraphics.length; i++){
 let printGraphics = [];
 
 let timer = 0;
-let refresh = 30;
+let refresh = 20;
 
 let isDirty = true;
 
@@ -38,7 +38,7 @@ class SplashScreen {
 
     update() {
         timer += 1;
-        if (timer >= 3){
+        if (timer >= refresh){
         for (let i = tGraphics.length-1; i > 0; i--){
             for (let j = 0; j < tGraphics[i].length; j++){
                 if (tGraphics [i][j] == '░' || tGraphics[i][j] == '▒' || tGraphics[i][j] == ' '){

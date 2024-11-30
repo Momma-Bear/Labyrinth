@@ -2,7 +2,7 @@ import Labyrinth from "./labyrint.mjs"
 import ANSI from "./utils/ANSI.mjs";
 import SplashScreen from "./splashScreen.mjs";
 
-const REFRESH_RATE = 250;
+const REFRESH_RATE = 1000/60;
 let splashDuration = 5000;
 
 console.log(ANSI.RESET, ANSI.CLEAR_SCREEN, ANSI.HIDE_CURSOR);
@@ -29,8 +29,8 @@ function update() {
     isBlocked = false;
 }
 
-init();
-
 function changeState(){
     state = new Labyrinth();
 }
+
+init();
