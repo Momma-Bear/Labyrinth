@@ -307,6 +307,7 @@ class Labyrinth {
             }
             
         }
+        console.log(ANSI.HIDE_CURSOR);
     }
 }
 
