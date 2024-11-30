@@ -2,6 +2,7 @@ import ANSI from "./utils/ANSI.mjs";
 import KeyBoardManager from "./utils/KeyBoardManager.mjs";
 import { readMapFile, readRecordFile } from "./utils/fileHelpers.mjs";
 import * as CONST from "./constants.mjs";
+import oscillate from "./utils/oscilate.mjs";
 
 
 const startingLevel = CONST.START_LEVEL_ID;
@@ -44,6 +45,8 @@ const EMPTY = " ";
 const HERO = "H";
 const LOOT = "$";
 const PORTAL = "O";
+const ENEMY_HORIZONTAL = "X";
+const ENEMY_VERTICAL = "Z";
 
 let direction = -1;
 
@@ -63,6 +66,11 @@ let startingPoint = {
 let backtracking = {};
 let lootedItems = [];
 let newLevel = false;
+let enemyPositionsH = [];
+let enemyPositionsV = [];
+let enemyPatrol = 2;
+//let enemyPatrolV = 2;
+let npcDirection = 1;
 
 const HP_MAX = 10;
 
@@ -174,6 +182,67 @@ class Labyrinth {
         } else {
             direction *= -1;
         }
+
+        identifyEnemies(ENEMY_HORIZONTAL, enemyPositionsH);
+        identifyEnemies(ENEMY_VERTICAL, enemyPositionsV);
+
+        enemyPatrol += 1;
+        for (let i = 0; i < enemyPositionsH.length; i++){
+            let tNpcRow = enemyPositionsH[i][0];
+            let tNpcCol = enemyPositionsH[i][1] + (1 * npcDirection);
+            
+
+            if (enemyPatrol >= 4){
+                npcDirection *= -1;
+                enemyPatrol = 0;
+            }
+
+            if (level[tNpcRow][tNpcCol] == EMPTY){
+            level[enemyPositionsH[i][0]][enemyPositionsH[i][1]] = EMPTY;
+            level[tNpcRow][tNpcCol] = ENEMY_HORIZONTAL;
+
+            enemyPositionsH[i][1] = tNpcCol;
+            isDirty = true;
+            }/*else {
+                if (level[tNpcRow][tNpcCol - (2 * npcDirection)] == EMPTY){
+                    level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
+                    level[tNpcRow][tNpcCol - (2 * npcDirection)] = ENEMY_VERTICAL;
+
+                    enemyPositionsV[i][1] = tNpcCol - (2 * npcDirection);
+                    isDirty = true;
+                }
+            }*/
+        }
+        
+        for (let i = 0; i < enemyPositionsV.length; i++){
+            let tNpcRow = enemyPositionsV[i][0] + (1 * npcDirection);
+            let tNpcCol = enemyPositionsV[i][1];
+            
+
+            if (enemyPatrol >= 4){
+                npcDirection *= -1;
+                enemyPatrol = 0;
+            }
+
+            if (level[tNpcRow][tNpcCol] == EMPTY){
+            level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
+            level[tNpcRow][tNpcCol] = ENEMY_VERTICAL;
+
+            enemyPositionsV[i][1] = tNpcCol;
+            isDirty = true;
+            } /*else {
+                if (level[tNpcRow - (2 * npcDirection)][tNpcCol] == EMPTY){
+                    level[enemyPositionsV[i][0]][enemyPositionsV[i][1]] = EMPTY;
+                    level[tNpcRow - (2 * npcDirection)][tNpcCol] = ENEMY_VERTICAL;
+
+                    enemyPositionsV[i][1] = tNpcCol - (2 * npcDirection);
+                    isDirty = true;
+                }
+            }*/
+        }
+        
+        
+
         if (doorDisable == false && playerPos.row == startingPoint.row && playerPos.col == startingPoint.col){
             levelNr -= 1;
             levelData = readMapFile(levels[levelNr]);
@@ -182,6 +251,9 @@ class Labyrinth {
             playerPos.col = backtracking["map" + levelNr + "Col"];
             doorDisable = true;
             newLevel = true;
+            enemyPositionsH = [];
+            enemyPositionsV = [];
+            enemyPatrol = 2;
         }
         if (doorDisable == false && (playerPos.row == 0 || playerPos. row == level.length - 1 || playerPos.col == 0 || playerPos.col == level[playerPos.row].length -1)){
             backtracking["map" + levelNr + "Row"] = playerPos.row;
@@ -192,6 +264,9 @@ class Labyrinth {
             playerPos.row = null;
             doorDisable = true;
             newLevel = true;
+            enemyPositionsH = [];
+            enemyPositionsV = [];
+            enemyPatrol = 2;
         }
     }
 
@@ -260,6 +335,18 @@ function moveHero(tRow, tCol){
 
     playerPos.row = tRow;
     playerPos.col = tCol;
+}
+
+function identifyEnemies(enemy, list){
+    let enemyNr = 0;
+    for (let row = 0; row < level.length; row++){
+        for (let col = 0; col < level[row].length; col++){
+            if (level[row][col] == enemy){
+                list[enemyNr] = [row, col];
+                enemyNr++;
+            }
+        }
+    }
 }
 
 
