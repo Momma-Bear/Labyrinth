@@ -12,3 +12,4 @@
     - Made event messages last longer
     - Stocked store with HP potions
     - Added poisons & potions
+    - Interesting feature: implemented a system that tracks items/loot that has been picked up
